@@ -1,0 +1,51 @@
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mitsuba-scene-description"
+version = "0.1.0"
+description = "Generated, typed, autocompletable Python API for composing Mitsuba scenes."
+readme = "README.md"
+license = { text = "MIT" }
+authors = [{ name = "Benjamin Beilharz" }]
+requires-python = ">=3.9"
+classifiers = [
+  "Programming Language :: Python :: 3",
+  "License :: OSI Approved :: MIT License",
+  "Typing :: Typed",
+]
+# Runtime has no hard deps; you only need Mitsuba to render, not to import.
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "beautifulsoup4>=4.13.4",
+    "mitsuba>=3.7.0",
+    "requests>=2.32.4",
+    "tree-sitter>=0.23.2",
+    "tree-sitter-python>=0.23.6",
+]
+
+[project.urls]
+Homepage = "https://github.com/pixelsandpointers/mitsuba-scene-description"
+Issues = "https://github.com/pixelsandpointers/mitsuba-scene-description/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mitsuba_scene_description"]
+# Include the typing marker if you added it
+include = ["mitsuba_scene_description/py.typed"]
+
+[tool.hatch.build.targets.sdist]
+# Exclude generator, examples, nix files, etc.
+exclude = [
+  "/generator",
+  "/example.py",
+  "/flake.nix",
+  "/flake.lock",
+  "/uv.lock",
+  "/README-dev.md",
+  "/tests",
+  "/*.ipynb",
+]
+
