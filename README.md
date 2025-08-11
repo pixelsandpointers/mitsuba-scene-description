@@ -20,34 +20,30 @@ pip install mitsuba-scene-description
 
 ### Usage
 ```python
-# minimal_scene.py
 import mitsuba_scene_description as msd
 import mitsuba as mi
 
 mi.set_variant("llvm_ad_rgb")
 
 diffuse = msd.SmoothDiffuseMaterial(reflectance=msd.RGB([0.8, 0.2, 0.2]))
-ball = msd.Sphere(
+sun = msd.Sphere(
     radius=1.0,
     bsdf=diffuse,
-    to_world=msd.Transform().translate(0, 0, 3).scale(1.0, 1.0, 1.0),
+    to_world=msd.Transform().translate(0, 0, 3).scale(0.4),
 )
 
-cam = msd.PerspectivePinholeCamera(
-    fov=45,
-    to_world=msd.Transform().look_at(origin=[0, 1, -6], target=[0, 0, 0], up=[0, 1, 0]),
+cam = msd.OrthographicCamera(
+    to_world=msd.Transform().look_at(origin=[0, 0, -6], target=[0, 0, 0], up=[0, 1, 0])
 )
+
 integrator = msd.PathTracer()
-# sun = msd.PointLightSource(
-#     to_world=msd.Transform().translate(3, 4, 2), intensity=msd.RGB([3, 3, 3])
-# )
 emitter = msd.ConstantEnvironmentEmitter()
 
 scene = msd.Scene(
     integrator=integrator,
     sensor=cam,
-    shapes={"ball": ball},
-    emitters={"sun": emitter},
+    shapes={"sun": sun},
+    emitters={"emitter": emitter},
 )
 
 
@@ -58,45 +54,33 @@ mi.util.write_bitmap("test.png", rndr)
 
 ```python
 # `scene.to_dict()` results in the following:
-{'ball': {'bsdf': {'reflectance': {'type': 'rgb', 'value': [0.8, 0.2, 0.2]},
-                   'type': 'diffuse'},
-          'radius': 1.0,
-          'to_world': Transform[
+{'emitter': {'type': 'constant'},
+ 'integrator': {'type': 'path'},
+ 'sensor': {'to_world': Transform[
   matrix=[[1, 0, 0, 0],
           [0, 1, 0, 0],
-          [0, 0, 1, 3],
+          [0, 0, 1, -6],
           [0, 0, 0, 1]],
   inverse_transpose=[[1, 0, 0, 0],
                      [0, 1, 0, 0],
                      [0, 0, 1, 0],
+                     [0, 0, 6, 1]]
+],
+            'type': 'orthographic'},
+ 'sun': {'bsdf': {'reflectance': {'type': 'rgb', 'value': [0.8, 0.2, 0.2]},
+                  'type': 'diffuse'},
+         'radius': 1.0,
+         'to_world': Transform[
+  matrix=[[0.4, 0, 0, 0],
+          [0, 0.4, 0, 0],
+          [0, 0, 0.4, 1.2],
+          [0, 0, 0, 1]],
+  inverse_transpose=[[2.5, 0, 0, 0],
+                     [0, 2.5, 0, 0],
+                     [0, 0, 2.5, 0],
                      [0, 0, -3, 1]]
 ],
-          'type': 'sphere'},
- 'integrator': {'type': 'path'},
- 'sensor': {'fov': 45,
-            'to_world': Transform[
-  matrix=[[1, 0, 0, 0],
-          [0, 0.986394, -0.164399, 1],
-          [0, 0.164399, 0.986394, -6],
-          [0, 0, 0, 1]],
-  inverse_transpose=[[1, 0, 0, 0],
-                     [0, 0.986394, -0.164399, 0],
-                     [0, 0.164399, 0.986394, 0],
-                     [0, -5.96046e-08, 6.08276, 1]]
-],
-            'type': 'perspective'},
- 'sun': {'intensity': {'type': 'rgb', 'value': [3, 3, 3]},
-         'to_world': Transform[
-  matrix=[[1, 0, 0, 3],
-          [0, 1, 0, 4],
-          [0, 0, 1, 2],
-          [0, 0, 0, 1]],
-  inverse_transpose=[[1, 0, 0, 0],
-                     [0, 1, 0, 0],
-                     [0, 0, 1, 0],
-                     [-3, -4, -2, 1]]
-],
-         'type': 'point'},
+         'type': 'sphere'},
  'type': 'scene'}
 ```
 
