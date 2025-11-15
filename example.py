@@ -1,4 +1,3 @@
-# minimal_scene.py
 import mitsuba_scene_description as msd
 import mitsuba as mi
 
