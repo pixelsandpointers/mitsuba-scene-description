@@ -1,101 +1,145 @@
 # Mitsuba Scene Description (MSD)
 
-_Disclaimer: Expect rough edges and frequent changes to the API._
+> **Disclaimer:** Expect rough edges and frequent changes to the API.
 
-This package contains:
-1) A **core runtime API** (`mitsuba_scene_description`) with typed dataclasses, a recursive serializer,
-   and a small sample of common plugins (BSDFs, shapes, sensors, emitters, integrators, textures).
-   You can use this immediately to build scenes programmatically and call `mi.load_dict(scene.to_dict())`.
+Typed, autocompletable Python dataclasses for composing [Mitsuba 3](https://github.com/mitsuba-renderer/mitsuba3) scenes programmatically.
+Build a scene with normal Python objects and call `mi.load_dict(scene.to_dict())` to render.
 
-2) A **generator script** (`generator/generate_mitsuba_api.py`) that **scrapes the official Mitsuba
-   plugin reference** and generates modules per category with conservative typing.
-   Run it locally (with internet access) to create a *complete* API for all plugins.
+The plugin classes are **generated at install time** by scraping the official Mitsuba plugin reference, so they always match your installed Mitsuba version.
 
-## Quick start (core API sample)
+## Installation
 
-### Installation
 ```bash
 pip install mitsuba-scene-description
 ```
 
-### Usage
+During installation the build hook detects your Mitsuba version and generates typed classes for every plugin in the docs.
+The version is resolved in this order:
+
+| Priority | Source | Example |
+|----------|--------|---------|
+| 1 | `MITSUBA_VERSION` env var | `MITSUBA_VERSION=3.7.1 pip install .` |
+| 2 | Installed `mitsuba` package | automatic if mitsuba is already installed |
+| 3 | Built-in fallback (`3.7.1`) | no extra setup needed |
+
+### Development install
+
+```bash
+pip install -e .
+```
+
+## Usage
+
 ```python
 import mitsuba_scene_description as msd
 import mitsuba as mi
 
 mi.set_variant("llvm_ad_rgb")
 
+# Define components
 diffuse = msd.SmoothDiffuseMaterial(reflectance=msd.RGB([0.8, 0.2, 0.2]))
-sun = msd.Sphere(
+ball = msd.Sphere(
     radius=1.0,
     bsdf=diffuse,
     to_world=msd.Transform().translate(0, 0, 3).scale(0.4),
 )
-
-cam = msd.OrthographicCamera(
-    to_world=msd.Transform().look_at(origin=[0, 0, -6], target=[0, 0, 0], up=[0, 1, 0])
+cam = msd.PerspectivePinholeCamera(
+    fov=45,
+    to_world=msd.Transform().look_at(
+        origin=[0, 1, -6], target=[0, 0, 0], up=[0, 1, 0]
+    ),
 )
-
 integrator = msd.PathTracer()
 emitter = msd.ConstantEnvironmentEmitter()
+```
 
+### Constructing scenes
+
+Pass components directly to `Scene`:
+
+```python
 scene = msd.Scene(
     integrator=integrator,
-    sensor=cam,
-    shapes={"sun": sun},
-    emitters={"emitter": emitter},
+    sensors=cam,  # also accepts a list for multi-sensor setups
+    shapes={"ball": ball},
+    emitters={"sun": emitter},
 )
+```
 
+Or use the fluent `SceneBuilder`:
 
+```python
+scene = (
+    msd.SceneBuilder()
+    .integrator(integrator)
+    .sensor(cam)
+    .shape("ball", ball)
+    .emitter("sun", emitter)
+    .build()
+)
+```
+
+### Rendering
+
+```python
 mi_scene = mi.load_dict(scene.to_dict())
 rndr = mi.render(mi_scene)
 mi.util.write_bitmap("test.png", rndr)
 ```
 
+`scene.to_dict()` produces a plain dict ready for `mi.load_dict`:
+
 ```python
-# `scene.to_dict()` results in the following:
-{'emitter': {'type': 'constant'},
- 'integrator': {'type': 'path'},
- 'sensor': {'to_world': Transform[
-  matrix=[[1, 0, 0, 0],
-          [0, 1, 0, 0],
-          [0, 0, 1, -6],
-          [0, 0, 0, 1]],
-  inverse_transpose=[[1, 0, 0, 0],
-                     [0, 1, 0, 0],
-                     [0, 0, 1, 0],
-                     [0, 0, 6, 1]]
-],
-            'type': 'orthographic'},
- 'sun': {'bsdf': {'reflectance': {'type': 'rgb', 'value': [0.8, 0.2, 0.2]},
-                  'type': 'diffuse'},
-         'radius': 1.0,
-         'to_world': Transform[
+{'ball': {'bsdf': {'reflectance': {'type': 'rgb', 'value': [0.8, 0.2, 0.2]},
+                   'type': 'diffuse'},
+          'radius': 1.0,
+          'to_world': Transform[
   matrix=[[0.4, 0, 0, 0],
           [0, 0.4, 0, 0],
           [0, 0, 0.4, 1.2],
           [0, 0, 0, 1]],
-  inverse_transpose=[[2.5, 0, 0, 0],
-                     [0, 2.5, 0, 0],
-                     [0, 0, 2.5, 0],
-                     [0, 0, -3, 1]]
+  ...
 ],
-         'type': 'sphere'},
+          'type': 'sphere'},
+ 'integrator': {'type': 'path'},
+ 'sensor': {'fov': 45,
+            'to_world': Transform[...],
+            'type': 'perspective'},
+ 'sun': {'type': 'constant'},
  'type': 'scene'}
 ```
 
-## Generate the full API from docs
+### Core types
 
-1. Install requirements: `pip install -e ".[dev]"`
-2. Run the generator:
-   ```bash
-   python generator/generate_mitsuba_api.py --out gen --overview https://mitsuba.readthedocs.io/en/latest/src/plugin_reference.html
-   ```
+| Type | Description |
+|------|-------------|
+| `Plugin` | Base dataclass for all plugins |
+| `Scene` | Top-level scene container |
+| `SceneBuilder` | Fluent builder for `Scene` |
+| `Transform` | Chainable affine transform builder (translate, scale, rotate, look_at, matrix) |
+| `ProjectiveTransform` | Extends `Transform` with perspective/orthographic (Mitsuba >= 3.7) |
+| `RGB` | RGB color value |
+| `Ref` | Reference to a named asset |
 
-### Notes
-- The generator uses **conservative typing by default** (`Optional[Plugin]` for unknown or nested plugin params).
-- You can tweak typing, categories, and output via CLI flags (`--aggressive`, `--single-file`, `--categories`).
+### Generated plugin categories
 
-### Roadmap
-- [ ] Post-processing of generation using the tree-sitter API to remove artifacts
-- [ ] Versioning
+Every Mitsuba plugin category gets its own module with a typed dataclass per plugin:
+
+BSDFs, Emitters, Films, Integrators, Media, Phase functions, Reconstruction filters, Samplers, Sensors, Shapes, Spectra, Textures, Volumes.
+
+All classes are re-exported from `mitsuba_scene_description`, so `msd.Sphere`, `msd.PathTracer`, etc. work directly.
+
+## Running the generator manually
+
+If you want to regenerate the API outside of the build process:
+
+```bash
+pip install requests beautifulsoup4
+python generator/generate_mitsuba_api.py --out mitsuba_scene_description
+```
+
+Pass `--overview <url>` to target a specific docs version.
+
+## License
+
+MIT

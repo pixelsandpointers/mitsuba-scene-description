@@ -1,5 +1,5 @@
-from .utils import Plugin, RGB, Ref, Transform, serialize
-from .scene import Scene
+from .utils import Plugin, RGB, Ref, Transform, ProjectiveTransform, serialize
+from .scene import Scene, SceneBuilder
 from .bsdfs import *
 from .emitters import *
 from .films import *
