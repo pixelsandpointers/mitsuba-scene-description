@@ -2,7 +2,8 @@
 Mitsuba Plugin API generator
 """
 
-import argparse, re
+import argparse
+import re
 from pathlib import Path
 from typing import Dict, List
 from urllib.parse import urljoin
@@ -10,7 +11,7 @@ from urllib.parse import urljoin
 import requests
 from bs4 import BeautifulSoup, Tag
 
-UTILS = """from __future__ import annotations
+UTILS_BASE = """from __future__ import annotations
 from dataclasses import dataclass, field, fields, is_dataclass
 from typing import Any, Dict, List, Optional
 
@@ -64,7 +65,10 @@ class Ref(Plugin):
         self.id = id
 
 class Transform:
-    \"\"\"Chainable builder that composes a real mi.ScalarTransform4f and is auto-serialized.\"\"\"
+    \"\"\"Chainable affine transform builder (translate, scale, rotate, look_at).
+
+    Produces a ``mi.ScalarTransform4f``.
+    \"\"\"
     __slots__ = ("_ops",)
     def __init__(self) -> None:
         self._ops: List[Dict[str, Any]] = []
@@ -96,27 +100,65 @@ class Transform:
         return cur
 """
 
+UTILS_PROJECTIVE = """
+class ProjectiveTransform(Transform):
+    \"\"\"Chainable projective transform builder (Mitsuba >= 3.7).
+
+    Extends :class:`Transform` with ``perspective()`` and ``orthographic()``.
+    Produces a ``mi.ScalarProjectiveTransform4f``.
+    \"\"\"
+    __slots__ = ("_ops",)
+    def perspective(self, fov: float, near: float, far: float) -> "ProjectiveTransform":
+        self._ops.append({"op":"perspective","fov":fov,"near":near,"far":far}); return self
+    def orthographic(self, near: float, far: float) -> "ProjectiveTransform":
+        self._ops.append({"op":"orthographic","near":near,"far":far}); return self
+    def to_mi(self):
+        import mitsuba as mi
+        T = mi.ScalarProjectiveTransform4f
+        cur = T()
+        for step in self._ops:
+            op = step["op"]
+            if op == "translate": piece = T().translate(step["value"])
+            elif op == "scale": piece = T().scale(step["value"])
+            elif op == "rotate": piece = T().rotate(axis=step["axis"], angle=step["angle"])
+            elif op == "look_at": piece = T().look_at(origin=step["origin"], target=step["target"], up=step["up"])
+            elif op == "perspective": piece = T().perspective(fov=step["fov"], near=step["near"], far=step["far"])
+            elif op == "orthographic": piece = T().orthographic(near=step["near"], far=step["far"])
+            elif op == "matrix": piece = T(step["matrix"])
+            else: continue
+            cur = piece @ cur
+        return cur
+"""
+
 SCENE = """from __future__ import annotations
 from dataclasses import dataclass, field
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Self, Union
 from .utils import Plugin, serialize, Ref
 
 @dataclass
 class Scene(Plugin):
     integrator: Optional[Plugin] = None
-    sensor: Optional[Plugin] = None
+    sensors: List[Plugin] = field(default_factory=list)
     shapes: Dict[str, Plugin] = field(default_factory=dict)
     emitters: Dict[str, Plugin] = field(default_factory=dict)
     media: Dict[str, Plugin] = field(default_factory=dict)
-    assets: Dict[str, Plugin] = field(default_factory=dict)  # optional global assets
+    assets: Dict[str, Plugin] = field(default_factory=dict)
 
-    def __init__(self, integrator: Optional[Plugin]=None, sensor: Optional[Plugin]=None,
-                 shapes: Dict[str, Plugin] | None=None, emitters: Dict[str, Plugin] | None=None,
-                 media: Dict[str, Plugin] | None=None, assets: Dict[str, Plugin] | None=None,
+    def __init__(self, integrator: Optional[Plugin]=None,
+                 sensors: Union[List[Plugin], Plugin, None]=None,
+                 shapes: Dict[str, Plugin] | None=None,
+                 emitters: Dict[str, Plugin] | None=None,
+                 media: Dict[str, Plugin] | None=None,
+                 assets: Dict[str, Plugin] | None=None,
                  id: str | None=None):
         super().__init__(type="scene", id=id)
         self.integrator = integrator
-        self.sensor = sensor
+        if sensors is None:
+            self.sensors = []
+        elif isinstance(sensors, list):
+            self.sensors = sensors
+        else:
+            self.sensors = [sensors]
         self.shapes = {} if shapes is None else shapes
         self.emitters = {} if emitters is None else emitters
         self.media = {} if media is None else media
@@ -131,13 +173,70 @@ class Scene(Plugin):
     def to_dict(self):
         d = {"type":"scene"}
         if self.integrator: d["integrator"] = serialize(self.integrator)
-        if self.sensor:     d["sensor"]     = serialize(self.sensor)
+        if len(self.sensors) == 1:
+            d["sensor"] = serialize(self.sensors[0])
+        else:
+            for i, s in enumerate(self.sensors):
+                d[f"sensor_{i}"] = serialize(s)
         for k,v in self.shapes.items():   d[k] = serialize(v)
         for k,v in self.emitters.items(): d[k] = serialize(v)
         for k,v in self.media.items():    d[k] = serialize(v)
         for k,v in self.assets.items():   d[k] = serialize(v)
         if self.id is not None: d["id"]=self.id
         return d
+
+class SceneBuilder:
+    \"\"\"Fluent builder for constructing a Scene step-by-step.\"\"\"
+
+    def __init__(self) -> None:
+        self._integrator: Optional[Plugin] = None
+        self._sensors: List[Plugin] = []
+        self._shapes: Dict[str, Plugin] = {}
+        self._emitters: Dict[str, Plugin] = {}
+        self._media: Dict[str, Plugin] = {}
+        self._assets: Dict[str, Plugin] = {}
+        self._id: Optional[str] = None
+
+    def integrator(self, plugin: Plugin) -> Self:
+        self._integrator = plugin
+        return self
+
+    def sensor(self, plugin: Plugin) -> Self:
+        self._sensors.append(plugin)
+        return self
+
+    def shape(self, name: str, plugin: Plugin) -> Self:
+        self._shapes[name] = plugin
+        return self
+
+    def emitter(self, name: str, plugin: Plugin) -> Self:
+        self._emitters[name] = plugin
+        return self
+
+    def medium(self, name: str, plugin: Plugin) -> Self:
+        self._media[name] = plugin
+        return self
+
+    def asset(self, plugin: Plugin) -> Self:
+        if plugin.id is None:
+            plugin.id = f"asset_{len(self._assets)+1}"
+        self._assets[plugin.id] = plugin
+        return self
+
+    def id(self, id: str) -> Self:
+        self._id = id
+        return self
+
+    def build(self) -> Scene:
+        return Scene(
+            integrator=self._integrator,
+            sensors=self._sensors,
+            shapes=self._shapes,
+            emitters=self._emitters,
+            media=self._media,
+            assets=self._assets,
+            id=self._id,
+        )
 """
 
 
@@ -220,6 +319,11 @@ def parse_category_page(cat_url: str) -> List[Dict[str, object]]:
     """Parse a category page and return a list of plugin specs."""
     s = fetch(cat_url)
     specs: List[Dict[str, object]] = []
+    # derive category slug from URL to filter non-plugin intro sections
+    cat_slug = (
+        re.sub(r"\.html$", "", cat_url.split("/")[-1]).replace("plugins_", "").lower()
+    )
+    seen_slugs: set[str] = set()
     for section in s.select("div.section, section"):
         h = section.select_one("h2, h3")
         if not h:
@@ -227,21 +331,33 @@ def parse_category_page(cat_url: str) -> List[Dict[str, object]]:
         title_text = h.get_text(" ", strip=True)
         if not section_has_param_table(section):
             continue
-        # derive slug
-        m = re.search(r"\(([^)]+)\)", title_text)
+        # derive slug – prefer the section/heading id (reliable plugin name)
         slug = None
-        if m:
-            slug = m.group(1).strip()
+        raw_id = h.get("id") or section.get("id") or ""
+        raw_id = raw_id.strip().lower()
+        if raw_id and re.fullmatch(r"[a-z_][a-z0-9_]*", raw_id):
+            slug = raw_id
+        if not slug:
+            for m in re.finditer(r"\(([^)]+)\)", title_text):
+                candidate = m.group(1).strip()
+                if re.fullmatch(r"[a-z_][a-z0-9_]*", candidate):
+                    slug = candidate
+                    break
         if not slug:
             code = h.select_one("code.literal, code")
             if code:
                 slug = code.get_text(strip=True)
         if not slug:
-            slug = (
-                (h.get("id") or section.get("id") or title_text.split()[0])
-                .strip()
-                .lower()
-            )
+            slug = raw_id or title_text.split()[0].strip().lower()
+        # Skip non-plugin sections (intro/overview) and duplicates
+        if not re.fullmatch(r"[a-z_][a-z0-9_]*", slug):
+            continue
+        if slug == cat_slug:
+            continue
+        if slug in seen_slugs:
+            continue
+        seen_slugs.add(slug)
+
         params = extract_params(section)
         specs.append(
             {
@@ -299,6 +415,12 @@ from typing import Optional, Any, Dict, List, Union
 from .utils import Plugin, RGB, Ref, Transform
 """
 
+HEADER_PROJECTIVE = """from __future__ import annotations
+from dataclasses import dataclass, field
+from typing import Optional, Any, Dict, List, Union
+from .utils import Plugin, RGB, Ref, Transform, ProjectiveTransform
+"""
+
 CLASS_TMPL = """@dataclass
 class {cls}(Plugin):
     \"\"\"{title} ({slug})
@@ -336,8 +458,6 @@ def render_class(spec: Dict[str, object], category_name: str) -> str:
         x = x.replace("\\", r"\\")
         x = x.replace('"""', r"\"\"\"")
         return x
-
-    add_shape_bsdf = category_name.lower().startswith("shape")
 
     def unique(name: str) -> str:
         base = name
@@ -390,16 +510,6 @@ def render_class(spec: Dict[str, object], category_name: str) -> str:
         optional_fields.append(f"    bsdf: Optional[Plugin] = None")
         optional_ctor.append(f"bsdf: Optional[Plugin] = None")
         assigns.append(f"        self.bsdf = bsdf")
-        docs.append(
-            f"        - {_esc(raw_name)} ({_esc(p.get('type', ''))}): [{marker_str}] {_esc(p.get('desc', ''))}"
-        )
-
-    # Inject optional bsdf for shapes if not already present
-    if add_shape_bsdf and "bsdf" not in seen:
-        seen.add("bsdf")
-        optional_fields.append(f"    bsdf: Optional[Plugin] = None")
-        optional_ctor.append(f"bsdf: Optional[Plugin] = None")
-        assigns.append(f"        self.bsdf = bsdf")
         docs.append(f"        - bsdf (bsdf): [P] Surface scattering model")
 
     fields = required_fields + optional_fields
@@ -421,29 +531,76 @@ def render_class(spec: Dict[str, object], category_name: str) -> str:
     )
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument(
-        "--overview",
-        default="https://mitsuba.readthedocs.io/en/latest/src/plugin_reference.html",
-    )
-    ap.add_argument("--out", default="./mitsuba-scene-description")
-    args = ap.parse_args()
+FALLBACK_VERSION = "3.7.1"
 
-    outdir = Path(args.out)
+
+def _version_tuple(v: str) -> tuple[int, ...]:
+    """Parse '3.7.1' or 'v3.7.1' into (3, 7, 1)."""
+    return tuple(int(p) for p in v.lstrip("v").split("."))
+
+
+def _resolve_version() -> str:
+    """Return the Mitsuba version string, trying multiple sources."""
+    import os
+
+    env = os.environ.get("MITSUBA_VERSION")
+    if env:
+        return env.lstrip("v")
+
+    try:
+        import mitsuba
+        return mitsuba.__version__
+    except ImportError:
+        pass
+
+    return FALLBACK_VERSION
+
+
+def generate(out_dir: str, overview_url: str | None = None) -> None:
+    """Generate the typed Mitsuba plugin API into *out_dir*.
+
+    Parameters
+    ----------
+    out_dir : str
+        Target package directory (e.g. ``"mitsuba_scene_description/"``).
+    overview_url : str | None
+        Plugin-reference overview page.  When *None* the URL is derived
+        from ``MITSUBA_VERSION`` env var, the installed mitsuba, or a
+        hardcoded fallback.
+    """
+    raw_version = _resolve_version()
+    version = f"v{raw_version}"
+    has_projective = _version_tuple(raw_version) >= (3, 7)
+    print("Building API with Mitsuba version:", version)
+
+    if overview_url is None:
+        overview_url = f"https://mitsuba.readthedocs.io/en/{version}/src/plugin_reference.html"
+
+    outdir = Path(out_dir)
     outdir.mkdir(parents=True, exist_ok=True)
     # write shared utils and scene
-    (outdir / "utils.py").write_text(UTILS)
+    utils_src = UTILS_BASE + (UTILS_PROJECTIVE if has_projective else "")
+    (outdir / "utils.py").write_text(utils_src)
     (outdir / "scene.py").write_text(SCENE)
+    if has_projective:
+        init_imports = "from .utils import Plugin, RGB, Ref, Transform, ProjectiveTransform, serialize\n"
+    else:
+        init_imports = "from .utils import Plugin, RGB, Ref, Transform, serialize\n"
     (outdir / "__init__.py").write_text(
-        "from .utils import Plugin, RGB, Ref, Transform, serialize\nfrom .scene import Scene\n"
+        init_imports + "from .scene import Scene, SceneBuilder\n"
     )
 
-    cats = discover_category_pages(args.overview)
+    cats = discover_category_pages(overview_url)
+    header = HEADER_PROJECTIVE if has_projective else HEADER
     for name, url in cats.items():
         specs = parse_category_page(url)
-        lines = [HEADER, f"# Category: {name}\n"]
+        lines = [header, f"# Category: {name}\n"]
+        seen_classes: set[str] = set()
         for spec in specs:
+            cls = camel(str(spec.get("title") or spec.get("slug", "")))
+            if cls in seen_classes:
+                continue
+            seen_classes.add(cls)
             lines.append(render_class(spec, name))
         (outdir / (re.sub(r"\W+", "_", name.lower()) + ".py")).write_text(
             "\n".join(lines)
@@ -454,6 +611,20 @@ def main():
             f.write(f"from .{re.sub(r'\\W+', '_', name.lower())} import *\n")
 
     print("Done. Wrote:", outdir.resolve())
+
+
+def main():
+    version = f"v{_resolve_version()}"
+
+    ap = argparse.ArgumentParser()
+    ap.add_argument(
+        "--overview",
+        default=f"https://mitsuba.readthedocs.io/en/{version}/src/plugin_reference.html",
+    )
+    ap.add_argument("--out", default="./mitsuba-scene-description")
+    args = ap.parse_args()
+
+    generate(out_dir=args.out, overview_url=args.overview)
 
 
 if __name__ == "__main__":
