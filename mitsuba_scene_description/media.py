@@ -28,16 +28,16 @@ isotropic.
     sigma_t: Optional[float] = None
     scale: Optional[float] = None
     sample_emitters: Optional[bool] = None
-    nested_plugin: Optional[Plugin] = None
+    phase: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, albedo: Optional[float] = None, sigma_t: Optional[float] = None, scale: Optional[float] = None, sample_emitters: Optional[bool] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, albedo: Optional[float] = None, sigma_t: Optional[float] = None, scale: Optional[float] = None, sample_emitters: Optional[bool] = None, phase: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="homogeneous", id=id)
         self.id = id
         self.albedo = albedo
         self.sigma_t = sigma_t
         self.scale = scale
         self.sample_emitters = sample_emitters
-        self.nested_plugin = nested_plugin
+        self.phase = phase
 
 @dataclass
 class HeterogeneousMedium(Plugin):
@@ -62,13 +62,13 @@ isotropic.
     sigma_t: Optional[float] = None
     scale: Optional[float] = None
     sample_emitters: Optional[bool] = None
-    nested_plugin: Optional[Plugin] = None
+    phase: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, albedo: Optional[float] = None, sigma_t: Optional[float] = None, scale: Optional[float] = None, sample_emitters: Optional[bool] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, albedo: Optional[float] = None, sigma_t: Optional[float] = None, scale: Optional[float] = None, sample_emitters: Optional[bool] = None, phase: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="heterogeneous", id=id)
         self.id = id
         self.albedo = albedo
         self.sigma_t = sigma_t
         self.scale = scale
         self.sample_emitters = sample_emitters
-        self.nested_plugin = nested_plugin
+        self.phase = phase

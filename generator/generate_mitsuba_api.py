@@ -29,6 +29,10 @@ class Plugin:
             v = getattr(self, f.name)
             if v is None:
                 continue
+            if isinstance(v, list) and v and hasattr(v[0], 'to_dict'):
+                for i, item in enumerate(v):
+                    out[f"{f.name}_{i}"] = serialize(item)
+                continue
             out[f.name] = serialize(v)
         return out
 
@@ -475,12 +479,22 @@ def render_class(spec: Dict[str, object], category_name: str) -> str:
         is_required = "required" in flags
 
         for raw_name in split_names(p.get("name", "param")):
-            nm = normalize(raw_name)
-            if nm in seen:
-                continue
-            base_ann = map_type(p.get("type", ""))
-            ann = base_ann if is_required else f"Optional[{base_ann}]"
-            nm = unique(nm)
+            # Nested plugin: use the type category as the field name
+            if raw_name.strip() == "(Nested plugin)":
+                ptype_raw = (p.get("type", "") or "").strip().lower()
+                nm = normalize(ptype_raw) if ptype_raw else "nested_plugin"
+                if nm in seen:
+                    continue
+                base_ann = "Union[Plugin, List[Plugin]]"
+                ann = base_ann if is_required else f"Optional[{base_ann}]"
+                nm = unique(nm)
+            else:
+                nm = normalize(raw_name)
+                if nm in seen:
+                    continue
+                base_ann = map_type(p.get("type", ""))
+                ann = base_ann if is_required else f"Optional[{base_ann}]"
+                nm = unique(nm)
 
             if is_required:
                 required_fields.append(f"    {nm}: {ann}")

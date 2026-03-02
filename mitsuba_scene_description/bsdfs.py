@@ -372,21 +372,24 @@ class BumpMapBsdfAdapter(Plugin):
     https://mitsuba.readthedocs.io/en/v3.7.1/src/generated/plugins_bsdfs.html#bumpmap
     Params:
         - (Nested plugin) (texture): [P | ∂ | D] Specifies the bump map texture.
+        - (Nested plugin) (bsdf): [P | ∂ | D] A BSDF model that should be affected by the bump map
         - scale (float): [P] Bump map gradient multiplier. (Default: 1.0)
         - flip_invalid_normals (boolean): [P] If enabled, the plugin will ensure that the perturbed normals are always
 consistent with the geometric normal. This prevents visual artifacts and is
 achieved by a simply flipping the shading normal, as described in [ SchusslerHHD17 ] . (Default: true)
         - use_shadowing_function (boolean): [P] If enabled, the plugin uses a Microfacet-based shadowing term [ ELS19 ] to smooth out transitions on shadow boundaries. (Default: true)
     """
-    nested_plugin: Optional[Plugin] = None
+    texture: Optional[Union[Plugin, List[Plugin]]] = None
+    bsdf: Optional[Union[Plugin, List[Plugin]]] = None
     scale: Optional[float] = None
     flip_invalid_normals: Optional[bool] = None
     use_shadowing_function: Optional[bool] = None
 
-    def __init__(self, id: Optional[str] = None, nested_plugin: Optional[Plugin] = None, scale: Optional[float] = None, flip_invalid_normals: Optional[bool] = None, use_shadowing_function: Optional[bool] = None):
+    def __init__(self, id: Optional[str] = None, texture: Optional[Union[Plugin, List[Plugin]]] = None, bsdf: Optional[Union[Plugin, List[Plugin]]] = None, scale: Optional[float] = None, flip_invalid_normals: Optional[bool] = None, use_shadowing_function: Optional[bool] = None):
         super().__init__(type="bumpmap", id=id)
         self.id = id
-        self.nested_plugin = nested_plugin
+        self.texture = texture
+        self.bsdf = bsdf
         self.scale = scale
         self.flip_invalid_normals = flip_invalid_normals
         self.use_shadowing_function = use_shadowing_function
@@ -404,15 +407,15 @@ achieved by a simply flipping the shading normal, as described in [ SchusslerHHD
         - use_shadowing_function (boolean): [P] If enabled, the plugin uses a Microfacet-based shadowing term [ ELS19 ] to smooth out transitions on shadow boundaries. (Default: true)
     """
     normalmap: Optional[Plugin] = None
-    nested_plugin: Optional[Plugin] = None
+    bsdf: Optional[Union[Plugin, List[Plugin]]] = None
     flip_invalid_normals: Optional[bool] = None
     use_shadowing_function: Optional[bool] = None
 
-    def __init__(self, id: Optional[str] = None, normalmap: Optional[Plugin] = None, nested_plugin: Optional[Plugin] = None, flip_invalid_normals: Optional[bool] = None, use_shadowing_function: Optional[bool] = None):
+    def __init__(self, id: Optional[str] = None, normalmap: Optional[Plugin] = None, bsdf: Optional[Union[Plugin, List[Plugin]]] = None, flip_invalid_normals: Optional[bool] = None, use_shadowing_function: Optional[bool] = None):
         super().__init__(type="normalmap", id=id)
         self.id = id
         self.normalmap = normalmap
-        self.nested_plugin = nested_plugin
+        self.bsdf = bsdf
         self.flip_invalid_normals = flip_invalid_normals
         self.use_shadowing_function = use_shadowing_function
 
@@ -427,13 +430,13 @@ accordingly. (Default: 0.5)
         - (Nested plugin) (bsdf): [P | ∂] Two nested BSDF instances that should be mixed according to the specified blending weight
     """
     weight: Optional[float] = None
-    nested_plugin: Optional[Plugin] = None
+    bsdf: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, weight: Optional[float] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, weight: Optional[float] = None, bsdf: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="blendbsdf", id=id)
         self.id = id
         self.weight = weight
-        self.nested_plugin = nested_plugin
+        self.bsdf = bsdf
 
 @dataclass
 class OpacityMask(Plugin):
@@ -444,13 +447,13 @@ class OpacityMask(Plugin):
         - (Nested plugin) (bsdf): [P | ∂] A base BSDF model that represents the non-transparent portion of the scattering
     """
     opacity: Optional[Union[List[float], Plugin]] = None
-    nested_plugin: Optional[Plugin] = None
+    bsdf: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, opacity: Optional[Union[List[float], Plugin]] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, opacity: Optional[Union[List[float], Plugin]] = None, bsdf: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="mask", id=id)
         self.id = id
         self.opacity = opacity
-        self.nested_plugin = nested_plugin
+        self.bsdf = bsdf
 
 @dataclass
 class TwoSidedBrdfAdapter(Plugin):
@@ -459,12 +462,12 @@ class TwoSidedBrdfAdapter(Plugin):
     Params:
         - (Nested plugin) (bsdf): [P | ∂] A nested BRDF that should be turned into a two-sided scattering model. If two BRDFs are specified, they will be placed on the front and back side, respectively
     """
-    nested_plugin: Optional[Plugin] = None
+    bsdf: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, bsdf: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="twosided", id=id)
         self.id = id
-        self.nested_plugin = nested_plugin
+        self.bsdf = bsdf
 
 @dataclass
 class LinearPolarizerMaterial(Plugin):

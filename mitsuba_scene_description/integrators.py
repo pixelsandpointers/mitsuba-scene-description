@@ -69,13 +69,13 @@ class ArbitraryOutputVariablesIntegrator(Plugin):
 respective output will be put into distinct images.
     """
     aovs: Optional[str] = None
-    nested_plugin: Optional[Plugin] = None
+    integrator: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, aovs: Optional[str] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, aovs: Optional[str] = None, integrator: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="aov", id=id)
         self.id = id
         self.aovs = aovs
-        self.nested_plugin = nested_plugin
+        self.integrator = integrator
 
 @dataclass
 class VolumetricPathTracer(Plugin):
@@ -299,12 +299,12 @@ class MomentIntegrator(Plugin):
         - (Nested plugin) (integrator):  Sub-integrators (can have more than one) which will be sampled along the AOV integrator. Their
 respective XYZ output will be put into distinct images.
     """
-    nested_plugin: Optional[Plugin] = None
+    integrator: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, integrator: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="moment", id=id)
         self.id = id
-        self.nested_plugin = nested_plugin
+        self.integrator = integrator
 
 @dataclass
 class StokesVectorIntegrator(Plugin):
@@ -315,12 +315,12 @@ class StokesVectorIntegrator(Plugin):
 integrator. In polarized rendering modes, its output Stokes vector is written
 into distinct images.
     """
-    nested_plugin: Optional[Plugin] = None
+    integrator: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, integrator: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="stokes", id=id)
         self.id = id
-        self.nested_plugin = nested_plugin
+        self.integrator = integrator
 
 @dataclass
 class ParticleTracer(Plugin):

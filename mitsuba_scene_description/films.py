@@ -56,12 +56,12 @@ Gaussian filter)
     crop_height: Optional[int] = None
     sample_border: Optional[bool] = None
     compensate: Optional[bool] = None
-    nested_plugin: Optional[Plugin] = None
+    rfilter: Optional[Union[Plugin, List[Plugin]]] = None
     size: Optional[Plugin] = None
     crop_size: Optional[Plugin] = None
     crop_offset: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, width: Optional[int] = None, height: Optional[int] = None, file_format: Optional[str] = None, pixel_format: Optional[str] = None, component_format: Optional[str] = None, crop_offset_x: Optional[int] = None, crop_offset_y: Optional[int] = None, crop_width: Optional[int] = None, crop_height: Optional[int] = None, sample_border: Optional[bool] = None, compensate: Optional[bool] = None, nested_plugin: Optional[Plugin] = None, size: Optional[Plugin] = None, crop_size: Optional[Plugin] = None, crop_offset: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, width: Optional[int] = None, height: Optional[int] = None, file_format: Optional[str] = None, pixel_format: Optional[str] = None, component_format: Optional[str] = None, crop_offset_x: Optional[int] = None, crop_offset_y: Optional[int] = None, crop_width: Optional[int] = None, crop_height: Optional[int] = None, sample_border: Optional[bool] = None, compensate: Optional[bool] = None, rfilter: Optional[Union[Plugin, List[Plugin]]] = None, size: Optional[Plugin] = None, crop_size: Optional[Plugin] = None, crop_offset: Optional[Plugin] = None):
         super().__init__(type="hdrfilm", id=id)
         self.id = id
         self.width = width
@@ -75,7 +75,7 @@ Gaussian filter)
         self.crop_height = crop_height
         self.sample_border = sample_border
         self.compensate = compensate
-        self.nested_plugin = nested_plugin
+        self.rfilter = rfilter
         self.size = size
         self.crop_size = crop_size
         self.crop_offset = crop_offset
@@ -125,13 +125,13 @@ Gaussian filter)
     crop_height: Optional[int] = None
     sample_border: Optional[bool] = None
     compensate: Optional[bool] = None
-    nested_plugin: Optional[Plugin] = None
+    rfilter: Optional[Union[Plugin, List[Plugin]]] = None
     nested_plugins: Optional[Union[List[float], Plugin]] = None
     size: Optional[Plugin] = None
     crop_size: Optional[Plugin] = None
     crop_offset: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, width: Optional[int] = None, height: Optional[int] = None, component_format: Optional[str] = None, crop_offset_x: Optional[int] = None, crop_offset_y: Optional[int] = None, crop_width: Optional[int] = None, crop_height: Optional[int] = None, sample_border: Optional[bool] = None, compensate: Optional[bool] = None, nested_plugin: Optional[Plugin] = None, nested_plugins: Optional[Union[List[float], Plugin]] = None, size: Optional[Plugin] = None, crop_size: Optional[Plugin] = None, crop_offset: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, width: Optional[int] = None, height: Optional[int] = None, component_format: Optional[str] = None, crop_offset_x: Optional[int] = None, crop_offset_y: Optional[int] = None, crop_width: Optional[int] = None, crop_height: Optional[int] = None, sample_border: Optional[bool] = None, compensate: Optional[bool] = None, rfilter: Optional[Union[Plugin, List[Plugin]]] = None, nested_plugins: Optional[Union[List[float], Plugin]] = None, size: Optional[Plugin] = None, crop_size: Optional[Plugin] = None, crop_offset: Optional[Plugin] = None):
         super().__init__(type="specfilm", id=id)
         self.id = id
         self.width = width
@@ -143,7 +143,7 @@ Gaussian filter)
         self.crop_height = crop_height
         self.sample_border = sample_border
         self.compensate = compensate
-        self.nested_plugin = nested_plugin
+        self.rfilter = rfilter
         self.nested_plugins = nested_plugins
         self.size = size
         self.crop_size = crop_size
