@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mitsuba-scene-description"
-version = "0.2.1"
+version = "0.2.2"
 description = "Generated, typed, autocompletable Python API for composing Mitsuba scenes."
 readme = "README.md"
 license = { text = "MIT" }
