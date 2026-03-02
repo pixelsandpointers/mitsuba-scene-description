@@ -428,13 +428,13 @@ class ShapeGroup(Plugin):
         - (Nested plugin) (shape):  One or more shapes that should be made available for geometry instancing
         - bsdf (bsdf): [P] Surface scattering model
     """
-    nested_plugin: Optional[Plugin] = None
+    shape: Optional[Union[Plugin, List[Plugin]]] = None
     bsdf: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, nested_plugin: Optional[Plugin] = None, bsdf: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, shape: Optional[Union[Plugin, List[Plugin]]] = None, bsdf: Optional[Plugin] = None):
         super().__init__(type="shapegroup", id=id)
         self.id = id
-        self.nested_plugin = nested_plugin
+        self.shape = shape
         self.bsdf = bsdf
 
 @dataclass
@@ -446,14 +446,14 @@ class Instance(Plugin):
         - to_world (transform): [P | ∂ | D] Specifies a linear object-to-world transformation. (Default: none (i.e. object space = world space))
         - bsdf (bsdf): [P] Surface scattering model
     """
-    nested_plugin: Optional[Plugin] = None
+    shapegroup: Optional[Union[Plugin, List[Plugin]]] = None
     to_world: Optional[Transform] = None
     bsdf: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, nested_plugin: Optional[Plugin] = None, to_world: Optional[Transform] = None, bsdf: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, shapegroup: Optional[Union[Plugin, List[Plugin]]] = None, to_world: Optional[Transform] = None, bsdf: Optional[Plugin] = None):
         super().__init__(type="instance", id=id)
         self.id = id
-        self.nested_plugin = nested_plugin
+        self.shapegroup = shapegroup
         self.to_world = to_world
         self.bsdf = bsdf
 
@@ -495,10 +495,10 @@ as used in the volprim_rf_basic integrator.
     extent: Optional[float] = None
     extent_adaptive_clamping: Optional[float] = None
     to_world: Optional[Transform] = None
-    nested_plugin: Optional[Plugin] = None
+    tensor: Optional[Union[Plugin, List[Plugin]]] = None
     bsdf: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, filename: Optional[str] = None, data: Optional[Plugin] = None, centers: Optional[Plugin] = None, scales: Optional[Plugin] = None, quaternions: Optional[Plugin] = None, scale_factor: Optional[float] = None, extent: Optional[float] = None, extent_adaptive_clamping: Optional[float] = None, to_world: Optional[Transform] = None, nested_plugin: Optional[Plugin] = None, bsdf: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, filename: Optional[str] = None, data: Optional[Plugin] = None, centers: Optional[Plugin] = None, scales: Optional[Plugin] = None, quaternions: Optional[Plugin] = None, scale_factor: Optional[float] = None, extent: Optional[float] = None, extent_adaptive_clamping: Optional[float] = None, to_world: Optional[Transform] = None, tensor: Optional[Union[Plugin, List[Plugin]]] = None, bsdf: Optional[Plugin] = None):
         super().__init__(type="ellipsoids", id=id)
         self.id = id
         self.filename = filename
@@ -510,7 +510,7 @@ as used in the volprim_rf_basic integrator.
         self.extent = extent
         self.extent_adaptive_clamping = extent_adaptive_clamping
         self.to_world = to_world
-        self.nested_plugin = nested_plugin
+        self.tensor = tensor
         self.bsdf = bsdf
 
 @dataclass
@@ -552,10 +552,10 @@ as used in the volprim_rf_basic integrator.
     extent_adaptive_clamping: Optional[float] = None
     shell: Optional[str] = None
     to_world: Optional[Transform] = None
-    nested_plugin: Optional[Plugin] = None
+    tensor: Optional[Union[Plugin, List[Plugin]]] = None
     bsdf: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, filename: Optional[str] = None, data: Optional[Plugin] = None, centers: Optional[Plugin] = None, scales: Optional[Plugin] = None, quaternions: Optional[Plugin] = None, scale_factor: Optional[float] = None, extent: Optional[float] = None, extent_adaptive_clamping: Optional[float] = None, shell: Optional[str] = None, to_world: Optional[Transform] = None, nested_plugin: Optional[Plugin] = None, bsdf: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, filename: Optional[str] = None, data: Optional[Plugin] = None, centers: Optional[Plugin] = None, scales: Optional[Plugin] = None, quaternions: Optional[Plugin] = None, scale_factor: Optional[float] = None, extent: Optional[float] = None, extent_adaptive_clamping: Optional[float] = None, shell: Optional[str] = None, to_world: Optional[Transform] = None, tensor: Optional[Union[Plugin, List[Plugin]]] = None, bsdf: Optional[Plugin] = None):
         super().__init__(type="ellipsoidsmesh", id=id)
         self.id = id
         self.filename = filename
@@ -568,5 +568,5 @@ as used in the volprim_rf_basic integrator.
         self.extent_adaptive_clamping = extent_adaptive_clamping
         self.shell = shell
         self.to_world = to_world
-        self.nested_plugin = nested_plugin
+        self.tensor = tensor
         self.bsdf = bsdf

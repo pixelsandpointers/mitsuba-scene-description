@@ -16,6 +16,10 @@ class Plugin:
             v = getattr(self, f.name)
             if v is None:
                 continue
+            if isinstance(v, list) and v and hasattr(v[0], 'to_dict'):
+                for i, item in enumerate(v):
+                    out[f"{f.name}_{i}"] = serialize(item)
+                continue
             out[f.name] = serialize(v)
         return out
 

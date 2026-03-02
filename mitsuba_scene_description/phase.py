@@ -71,13 +71,13 @@ function respectively, and in-between values interpolate accordingly.
 specified blending weight
     """
     weight: Optional[float] = None
-    nested_plugin: Optional[Plugin] = None
+    phase: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, weight: Optional[float] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, weight: Optional[float] = None, phase: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="blendphase", id=id)
         self.id = id
         self.weight = weight
-        self.nested_plugin = nested_plugin
+        self.phase = phase
 
 @dataclass
 class LookupTablePhaseFunction(Plugin):

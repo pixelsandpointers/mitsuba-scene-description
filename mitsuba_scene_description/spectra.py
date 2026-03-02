@@ -93,14 +93,14 @@ class D65Spectrum(Plugin):
     """
     color: Optional[List[float]] = None
     scale: Optional[float] = None
-    nested_plugin: Optional[Plugin] = None
+    texture: Optional[Union[Plugin, List[Plugin]]] = None
 
-    def __init__(self, id: Optional[str] = None, color: Optional[List[float]] = None, scale: Optional[float] = None, nested_plugin: Optional[Plugin] = None):
+    def __init__(self, id: Optional[str] = None, color: Optional[List[float]] = None, scale: Optional[float] = None, texture: Optional[Union[Plugin, List[Plugin]]] = None):
         super().__init__(type="d65", id=id)
         self.id = id
         self.color = color
         self.scale = scale
-        self.nested_plugin = nested_plugin
+        self.texture = texture
 
 @dataclass
 class RawConstantValuedTexture(Plugin):
