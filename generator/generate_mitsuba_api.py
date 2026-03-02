@@ -456,6 +456,7 @@ def render_class(spec: Dict[str, object], category_name: str) -> str:
     seen = set()
 
     add_shape_bsdf = category_name.lower().startswith("shape")
+    add_sensor_film = category_name.lower().startswith("sensor")
 
     def _esc(x: str) -> str:
         x = x or ""
@@ -525,6 +526,14 @@ def render_class(spec: Dict[str, object], category_name: str) -> str:
         optional_ctor.append(f"bsdf: Optional[Plugin] = None")
         assigns.append(f"        self.bsdf = bsdf")
         docs.append(f"        - bsdf (bsdf): [P] Surface scattering model")
+
+    # Inject optional film for sensors if not already present
+    if add_sensor_film and "film" not in seen:
+        seen.add("film")
+        optional_fields.append(f"    film: Optional[Plugin] = None")
+        optional_ctor.append(f"film: Optional[Plugin] = None")
+        assigns.append(f"        self.film = film")
+        docs.append(f"        - film (film): Film plugin for the sensor")
 
     fields = required_fields + optional_fields
     if not fields:

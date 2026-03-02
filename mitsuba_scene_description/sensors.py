@@ -17,19 +17,22 @@ and far_clip=1e4 (i.e. 10000 ))
         - far_clip (float): [P] Distance to the near/far clip planes. (Default: near_clip=1e-2 (i.e. 0.01 )
 and far_clip=1e4 (i.e. 10000 ))
         - srf (spectrum):  Sensor Response Function that defines the spectral sensitivity of the sensor (Default: none )
+        - film (film): Film plugin for the sensor
     """
     to_world: Optional[Transform] = None
     near_clip: Optional[float] = None
     far_clip: Optional[float] = None
     srf: Optional[Union[List[float], Plugin]] = None
+    film: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, near_clip: Optional[float] = None, far_clip: Optional[float] = None, srf: Optional[Union[List[float], Plugin]] = None):
+    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, near_clip: Optional[float] = None, far_clip: Optional[float] = None, srf: Optional[Union[List[float], Plugin]] = None, film: Optional[Plugin] = None):
         super().__init__(type="orthographic", id=id)
         self.id = id
         self.to_world = to_world
         self.near_clip = near_clip
         self.far_clip = far_clip
         self.srf = srf
+        self.film = film
 
 @dataclass
 class PerspectivePinholeCamera(Plugin):
@@ -57,6 +60,7 @@ and far_clip=1e4 (i.e. 10000 ))
         - principal_point_offset_y (float): [P | ∂ | D] Specifies the position of the camera’s principal point relative to the center of the film.
         - srf (spectrum):  Sensor Response Function that defines the spectral sensitivity of the sensor (Default: none )
         - x_fov (float): [P | ∂ | D] Denotes the camera’s field of view in degrees along the horizontal axis.
+        - film (film): Film plugin for the sensor
     """
     to_world: Optional[Transform] = None
     fov: Optional[float] = None
@@ -68,8 +72,9 @@ and far_clip=1e4 (i.e. 10000 ))
     principal_point_offset_y: Optional[float] = None
     srf: Optional[Union[List[float], Plugin]] = None
     x_fov: Optional[float] = None
+    film: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, fov: Optional[float] = None, focal_length: Optional[str] = None, fov_axis: Optional[str] = None, near_clip: Optional[float] = None, far_clip: Optional[float] = None, principal_point_offset_x: Optional[float] = None, principal_point_offset_y: Optional[float] = None, srf: Optional[Union[List[float], Plugin]] = None, x_fov: Optional[float] = None):
+    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, fov: Optional[float] = None, focal_length: Optional[str] = None, fov_axis: Optional[str] = None, near_clip: Optional[float] = None, far_clip: Optional[float] = None, principal_point_offset_x: Optional[float] = None, principal_point_offset_y: Optional[float] = None, srf: Optional[Union[List[float], Plugin]] = None, x_fov: Optional[float] = None, film: Optional[Plugin] = None):
         super().__init__(type="perspective", id=id)
         self.id = id
         self.to_world = to_world
@@ -82,6 +87,7 @@ and far_clip=1e4 (i.e. 10000 ))
         self.principal_point_offset_y = principal_point_offset_y
         self.srf = srf
         self.x_fov = x_fov
+        self.film = film
 
 @dataclass
 class PerspectiveCameraWithAThinLens(Plugin):
@@ -107,6 +113,7 @@ and far_clip=1e4 (i.e. 10000 ))
 and far_clip=1e4 (i.e. 10000 ))
         - srf (spectrum):  Sensor Response Function that defines the spectral sensitivity of the sensor (Default: none )
         - x_fov (float): [P] Denotes the camera’s field of view in degrees along the horizontal axis.
+        - film (film): Film plugin for the sensor
     """
     to_world: Optional[Transform] = None
     aperture_radius: Optional[float] = None
@@ -118,8 +125,9 @@ and far_clip=1e4 (i.e. 10000 ))
     far_clip: Optional[float] = None
     srf: Optional[Union[List[float], Plugin]] = None
     x_fov: Optional[float] = None
+    film: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, aperture_radius: Optional[float] = None, focus_distance: Optional[float] = None, focal_length: Optional[str] = None, fov: Optional[float] = None, fov_axis: Optional[str] = None, near_clip: Optional[float] = None, far_clip: Optional[float] = None, srf: Optional[Union[List[float], Plugin]] = None, x_fov: Optional[float] = None):
+    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, aperture_radius: Optional[float] = None, focus_distance: Optional[float] = None, focal_length: Optional[str] = None, fov: Optional[float] = None, fov_axis: Optional[str] = None, near_clip: Optional[float] = None, far_clip: Optional[float] = None, srf: Optional[Union[List[float], Plugin]] = None, x_fov: Optional[float] = None, film: Optional[Plugin] = None):
         super().__init__(type="thinlens", id=id)
         self.id = id
         self.to_world = to_world
@@ -132,6 +140,7 @@ and far_clip=1e4 (i.e. 10000 ))
         self.far_clip = far_clip
         self.srf = srf
         self.x_fov = x_fov
+        self.film = film
 
 @dataclass
 class DistantRadiancemeterSensor(Plugin):
@@ -148,19 +157,22 @@ If a point is passed, rays will target it.
 If a shape plugin is passed, ray target points will be sampled from its
 surface.
         - srf (spectrum):  Sensor Response Function that defines the spectral sensitivity of the sensor (Default: none )
+        - film (film): Film plugin for the sensor
     """
     to_world: Optional[Transform] = None
     direction: Optional[Plugin] = None
     target: Optional[Plugin] = None
     srf: Optional[Union[List[float], Plugin]] = None
+    film: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, direction: Optional[Plugin] = None, target: Optional[Plugin] = None, srf: Optional[Union[List[float], Plugin]] = None):
+    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, direction: Optional[Plugin] = None, target: Optional[Plugin] = None, srf: Optional[Union[List[float], Plugin]] = None, film: Optional[Plugin] = None):
         super().__init__(type="distant", id=id)
         self.id = id
         self.to_world = to_world
         self.direction = direction
         self.target = target
         self.srf = srf
+        self.film = film
 
 @dataclass
 class BatchSensor(Plugin):
@@ -168,13 +180,16 @@ class BatchSensor(Plugin):
     https://mitsuba.readthedocs.io/en/v3.7.1/src/generated/plugins_sensors.html#batch
     Params:
         - srf (spectrum):  Sensor Response Function that defines the spectral sensitivity of the sensor (Default: none )
+        - film (film): Film plugin for the sensor
     """
     srf: Optional[Union[List[float], Plugin]] = None
+    film: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, srf: Optional[Union[List[float], Plugin]] = None):
+    def __init__(self, id: Optional[str] = None, srf: Optional[Union[List[float], Plugin]] = None, film: Optional[Plugin] = None):
         super().__init__(type="batch", id=id)
         self.id = id
         self.srf = srf
+        self.film = film
 
 @dataclass
 class RadianceMeter(Plugin):
@@ -188,19 +203,22 @@ Must be used with direction .
         - direction (vector):  Alternative (and exclusive) to to_world . Direction in which the
 sensor is pointing in world coordinates. Must be used with origin .
         - srf (spectrum):  Sensor Response Function that defines the spectral sensitivity of the sensor (Default: none )
+        - film (film): Film plugin for the sensor
     """
     to_world: Optional[Transform] = None
     origin: Optional[Plugin] = None
     direction: Optional[Plugin] = None
     srf: Optional[Union[List[float], Plugin]] = None
+    film: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, origin: Optional[Plugin] = None, direction: Optional[Plugin] = None, srf: Optional[Union[List[float], Plugin]] = None):
+    def __init__(self, id: Optional[str] = None, to_world: Optional[Transform] = None, origin: Optional[Plugin] = None, direction: Optional[Plugin] = None, srf: Optional[Union[List[float], Plugin]] = None, film: Optional[Plugin] = None):
         super().__init__(type="radiancemeter", id=id)
         self.id = id
         self.to_world = to_world
         self.origin = origin
         self.direction = direction
         self.srf = srf
+        self.film = film
 
 @dataclass
 class IrradianceMeter(Plugin):
@@ -208,10 +226,13 @@ class IrradianceMeter(Plugin):
     https://mitsuba.readthedocs.io/en/v3.7.1/src/generated/plugins_sensors.html#irradiancemeter
     Params:
         - srf (spectrum):  Sensor Response Function that defines the spectral sensitivity of the sensor (Default: none )
+        - film (film): Film plugin for the sensor
     """
     srf: Optional[Union[List[float], Plugin]] = None
+    film: Optional[Plugin] = None
 
-    def __init__(self, id: Optional[str] = None, srf: Optional[Union[List[float], Plugin]] = None):
+    def __init__(self, id: Optional[str] = None, srf: Optional[Union[List[float], Plugin]] = None, film: Optional[Plugin] = None):
         super().__init__(type="irradiancemeter", id=id)
         self.id = id
         self.srf = srf
+        self.film = film
