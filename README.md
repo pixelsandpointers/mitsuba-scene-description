@@ -2,6 +2,8 @@
 
 > **Disclaimer:** Expect rough edges and frequent changes to the API.
 
+There's now another way to author Mitsuba scenes using OpenUSD and a Hydra delegate directly: [hdmitsuba](https://github.com/google/hdmitsuba). If I were you and you have the means to author proper USD scenes, I encourage you to follow that route. As long as there are no major changes to Mitsuba's documentation style, this package will still work as intended.  
+
 Typed, autocompletable Python dataclasses for composing [Mitsuba 3](https://github.com/mitsuba-renderer/mitsuba3) scenes programmatically.
 Build a scene with normal Python objects and call `mi.load_dict(scene.to_dict())` to render.
 
